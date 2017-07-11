@@ -10,7 +10,9 @@ import socket from './socket';
 const initialState = {
   messages: [],
   name: 'Reggie',
-  newMessageEntry: ''
+  newMessageEntry: '',
+  channels: [],
+  channelEntry: '',
 };
 
 // ACTION TYPES
@@ -19,12 +21,31 @@ const UPDATE_NAME = 'UPDATE_NAME';
 const GET_MESSAGE = 'GET_MESSAGE';
 const GET_MESSAGES = 'GET_MESSAGES';
 const WRITE_MESSAGE = 'WRITE_MESSAGE';
+const GET_CHANNELS = 'GET_CHANNELS'
+const GET_ONE_CHANNEL = 'GET_ONE_CHANNEL'
+const ADD_CHANNEL = 'ADD_CHANNEL'
+const CHANNEL_ENTRY = 'CHANNEL_ENTRY'
 
 // ACTION CREATORS
 
 export function updateName (name) {
   const action = { type: UPDATE_NAME, name };
   return action;
+}
+
+export function getChannels (channels) {
+  const action = { type: GET_CHANNELS, channels}
+  return action
+}
+
+export function addChannel (channel) {
+  const action = {type: ADD_CHANNEL, channel}
+  return action
+}
+
+export function writeChannel (content) {
+    const action = { type: CHANNEL_ENTRY, content };
+    return action;
 }
 
 export function getMessage (message) {
@@ -55,6 +76,32 @@ export function fetchMessages () {
       });
   }
 }
+
+export function fetchChannels () {
+
+  return function thunk (dispatch) {
+    return axios.get('/api/channels')
+    .then(res => res.data)
+    .then(channels => {
+      const action = getChannels(channels)
+      dispatch(action)
+    })
+  }
+}
+export function postChannel (channel) {
+
+  return function thunk (dispatch) {
+    return axios.post('/api/channels', channel)
+      .then(res => res.data)
+      .then(channel => {
+        const action = addChannel(channel);
+        dispatch(action);
+        socket.emit('new-channel', channel);
+      });
+  }
+
+}
+
 
 export function postMessage (message) {
 
@@ -121,6 +168,21 @@ function reducer (state = initialState, action) {
         ...state,
         newMessageEntry: action.content
       };
+    case GET_CHANNELS:
+      return {
+        ...state,
+        channels: action.channels
+      }
+    case ADD_CHANNEL:
+      return {
+        ...state,
+        channels: [...state.channels, action.channel]
+      }
+    case CHANNEL_ENTRY:
+      return {
+        ...state,
+        channelEntry: action.context
+      }
 
     default:
       return state;
